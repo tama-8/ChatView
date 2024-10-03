@@ -10,51 +10,63 @@ import SwiftUI
 struct ChatView: View {
     
     @State private var textFieldText: String = ""
+    @FocusState private var textFieldFocused: Bool
     
-    let vm: ChatViewModel = ChatViewModel()
+    @ObservedObject var vm: ChatViewModel = ChatViewModel()
     
     var body: some View {
-        VStack(spacing: 0){
-            //メッセージエリア
-            massageArea
-            //ナビゲーションエリア
-            .overlay(navigationArea ,alignment: .top)
+        VStack(spacing: 0) {
+            // Message Area
+            messageArea
             
-            //インプットエリア
+            // Navigation Area
+            .overlay(navigationArea, alignment: .top)
+            
+            // Input Area
             inputArea
         }
     }
 }
-    struct ChatView_Previews:PreviewProvider{
-        static var previews: some View{
-            ChatView()
-        }
-    }
 
-extension ChatView{
-    
-    private var massageArea: some View{
-        ScrollView{
-            VStack(spacing:0){
-                ForEach(0..<15){ _ in
-                    MessageRow()
-                }
-            }
-            .padding(.horizontal)
-            .padding(.top,72)
-        }
-        .background(.cyan)
+struct ChatView_Previews: PreviewProvider {
+    static var previews: some View {
+        ChatView()
     }
+}
+
+extension ChatView {
     
-    private var inputArea: some View{
-        HStack{
-            HStack{
+    private var messageArea: some View {
+        ScrollViewReader{ proxy in
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(vm.messages) { message in
+                        MessageRow(message: message)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.top, 72)
+            }
+            .background(Color("Background"))
+            .onTapGesture {
+                textFieldFocused = false
+            }
+            .onAppear{
+                scrollTolast(proxy: proxy)
+            }
+          }
+        }
+            
+      
+    
+    private var inputArea: some View {
+        HStack {
+            HStack {
                 Image(systemName: "plus")
                 Image(systemName: "camera")
                 Image(systemName: "photo")
             }
             .font(.title2)
-          
             TextField("Aa", text: $textFieldText)
                 .padding()
                 .background(Color(uiColor: .secondarySystemBackground))
@@ -64,32 +76,47 @@ extension ChatView{
                         .font(.title2)
                         .padding(.trailing)
                         .foregroundColor(.gray)
-                    ,alignment: .trailing
+                    
+                    , alignment: .trailing
                 )
+                .onSubmit {
+                    sendMessage()
+                }
+                .focused($textFieldFocused)
             Image(systemName: "mic")
                 .font(.title2)
         }
-        .padding()
-        .background(.white)
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(Color(uiColor: .systemBackground))
     }
     
-    private var navigationArea: some View{
-        HStack{
+    private var navigationArea: some View {
+        HStack {
             Image(systemName: "chevron.backward")
                 .font(.title2)
-           
             Text("Title")
                 .font(.title2.bold())
             Spacer()
-            HStack(spacing:16){
+            HStack(spacing: 16) {
                 Image(systemName: "text.magnifyingglass")
                 Image(systemName: "phone")
                 Image(systemName: "line.3.horizontal")
             }
             .font(.title2)
-            
         }
         .padding()
-        .background(.cyan.opacity(0.9))
+        .background(Color("Background").opacity(0.9))
+    }
+    private func sendMessage(){
+        if !textFieldText.isEmpty{
+            vm.addMessage(text: textFieldText)
+            textFieldText = ""
+        }
+    }
+    private func scrollTolast(proxy: ScrollViewProxy){
+        if let lastMessage = vm.messages.last{
+            proxy.scrollTo(lastMessage.id,anchor: .bottom)
+        }
     }
 }
