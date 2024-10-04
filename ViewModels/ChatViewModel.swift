@@ -9,12 +9,12 @@ import Foundation
 
 class ChatViewModel: ObservableObject{
     
-    var chatData: [Chat] = []
-    @Published var messages: [Message] = []
+    @Published var chatData: [Chat] = []
+//    @Published var messages: [Message] = []
     
     init() {
         chatData = fetchChatData()
-        messages = chatData[0].messages
+//        messages = chatData[0].messages
     }
     
     private func fetchChatData() -> [Chat] {
@@ -38,14 +38,23 @@ class ChatViewModel: ObservableObject{
         }
     }
     
-    func addMessage(text: String){
+    func addMessage(chatId:String,text: String){
+        
+        guard let index = chatData.firstIndex (where: { chat in
+            chat.id == chatId
+        })else{ return }
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let formattedDateString = formatter.string(from: Date())
+        
         let newMessage = Message(
             id: UUID().uuidString,
             text: text,
             user: User.currentUser,
-            date: Date().description,
+            date: formattedDateString,
             readed: false
         )
-        messages.append(newMessage)
+        chatData[index].messages.append(newMessage)
     }
 }

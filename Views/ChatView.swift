@@ -9,10 +9,14 @@ import SwiftUI
 
 struct ChatView: View {
     
+    let chat: Chat
+    
     @State private var textFieldText: String = ""
     @FocusState private var textFieldFocused: Bool
+    @Environment(\.dismiss) private var dismiss
     
-    @ObservedObject var vm: ChatViewModel = ChatViewModel()
+    @EnvironmentObject var vm: ChatViewModel
+    //@ObservedObject var vm: ChatViewModel = ChatViewModel()
     
     var body: some View {
         VStack(spacing: 0) {
@@ -28,19 +32,19 @@ struct ChatView: View {
     }
 }
 
-struct ChatView_Previews: PreviewProvider {
-    static var previews: some View {
-        ChatView()
-    }
-}
+//struct ChatView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        ChatView()
+//    }
+//}
 
 extension ChatView {
     
     private var messageArea: some View {
-        ScrollViewReader{ proxy in
+        ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {
-                    ForEach(vm.messages) { message in
+                    ForEach(chat.messages) { message in
                         MessageRow(message: message)
                     }
                 }
@@ -51,13 +55,11 @@ extension ChatView {
             .onTapGesture {
                 textFieldFocused = false
             }
-            .onAppear{
-                scrollTolast(proxy: proxy)
+            .onAppear {
+                scrollToLast(proxy: proxy)
             }
-          }
         }
-            
-      
+    }
     
     private var inputArea: some View {
         HStack {
@@ -93,8 +95,13 @@ extension ChatView {
     
     private var navigationArea: some View {
         HStack {
-            Image(systemName: "chevron.backward")
-                .font(.title2)
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "chevron.backward")
+                    .font(.title2)
+                    .foregroundColor(.primary)
+            }
             Text("Title")
                 .font(.title2.bold())
             Spacer()
@@ -108,15 +115,17 @@ extension ChatView {
         .padding()
         .background(Color("Background").opacity(0.9))
     }
-    private func sendMessage(){
-        if !textFieldText.isEmpty{
-            vm.addMessage(text: textFieldText)
+    
+    private func sendMessage() {
+        if !textFieldText.isEmpty {
+            vm.addMessage(chatId: chat.id, text: textFieldText)
             textFieldText = ""
         }
     }
-    private func scrollTolast(proxy: ScrollViewProxy){
-        if let lastMessage = vm.messages.last{
-            proxy.scrollTo(lastMessage.id,anchor: .bottom)
+    
+    private func scrollToLast(proxy: ScrollViewProxy) {
+        if let lastMessage = chat.messages.last {
+            proxy.scrollTo(lastMessage.id, anchor: .bottom)
         }
     }
 }
